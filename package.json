@@ -10,7 +10,11 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@aws-sdk/lib-dynamodb": "^3.876.0",
+    "@nuxt/ui": "^3.3.2",
+    "aws-sdk": "^2.1692.0",
     "nuxt": "^4.0.3",
+    "ui": "0.2.4",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
   }
