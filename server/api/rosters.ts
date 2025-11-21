@@ -1,9 +1,6 @@
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb';
 import useDynamoDB from '../utils/dynamodb';
 
-import type { Pass } from '~~/schema/pass';
-
-
 export default defineEventHandler(async (event) => {
 
   let client = useDynamoDB();
@@ -13,11 +10,11 @@ export default defineEventHandler(async (event) => {
   const { roomId } = query;
 
   let queryOptions: ScanCommandInput = {
-    TableName: 'pass-scans',
+    TableName: 'rosters',
   }
 
   if (roomId) {
-    queryOptions.FilterExpression = "roomId = :roomId";
+    queryOptions.FilterExpression = "rosterId = :rosterId";
     queryOptions.ExpressionAttributeValues = {
       ":roomId": roomId,
     };
@@ -25,7 +22,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { Items } = await client.send(new ScanCommand(queryOptions));
-    return Items as Pass[]
+
+    return Items
   } catch (err) {
     console.error(err);
     throw createError({
