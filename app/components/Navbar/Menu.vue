@@ -35,9 +35,16 @@ if(data.value?.id_token != null){
                     </UButton>
             </div>
             <div v-if="user != null && user.Role === 'admin'">
-                <UButton @click="useAuth().signOut()" color="primary" class="text-lg">
+                <UButton color="primary" class="text-lg">
                     <NuxtLink to="/rosters" class="text-lg">
                         Rosters
+                    </NuxtLink>
+                </UButton>
+            </div>
+            <div v-if="user != null && user.Role === 'admin'">
+                <UButton color="primary" class="text-lg">
+                    <NuxtLink to="/schedules" class="text-lg">
+                        Schedules
                     </NuxtLink>
                 </UButton>
             </div>

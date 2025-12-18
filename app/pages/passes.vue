@@ -15,13 +15,13 @@
             <div class="p-3">
                 Active Passes:
             </div>
-            <UTable :data="tableData" :columns="columns"/>
+            <UTable :data="tableData" :columns="activeColumns"/>
         </div>
         <div class="border border-gray-30 rounded-lg max-w-lg">
             <div class="p-3">
                 Expired Passes:
             </div>
-            <UTable :data="expiredTableData"/>
+            <UTable :data="expiredTableData" :columns="expiredColumns"/>
         </div>
       </div>
     </div>
@@ -73,7 +73,18 @@ watch(passData, (newPassData) => {
 }, { immediate: true }
 );
 
-const columns: TableColumn<PassColumn>[] = [
+const expiredColumns: TableColumn<PassColumn>[] = [
+  {
+    accessorKey: 'passId',
+    header: 'Pass ID',
+  },
+  {
+    accessorKey: 'timestamp',
+    header: 'Issued',
+  }
+]
+
+const activeColumns: TableColumn<PassColumn>[] = [
   {
     accessorKey: 'passId',
     header: 'Pass ID',
@@ -125,7 +136,14 @@ const tableData = computed(() => {
 })
 
 const expiredTableData = computed(() => {
-  return passData.value!.filter((entry) => entry.expired).map((entry) => {
+  return passData.value!.filter((entry) => {
+    const passTime = new Date(entry.timestamp);
+    const currentTime = new Date();
+    const diffInMs = currentTime.getTime() - passTime.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    return entry.expired && diffInHours <= 48;
+  }
+  ).map((entry) => {
     const timeAgo = useTimeAgo(new Date(entry.timestamp));
     return {
       passId: entry.passId,

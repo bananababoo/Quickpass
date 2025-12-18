@@ -1,0 +1,55 @@
+get the current schedule.
+get last time closest to now
+get all passes assigned to that room AND in in the time of the periods
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Given like 5 id cards:
+- Scan each one, store to db:
+- /api/internal/initCard
+- /api/internal/addUserToCard (post user, assigns to card in card db, sets as used, returns card)
+
+- /api/internal/addUserToRoom (post userID, add user to room w/period)
+
+Rosters page: admin only
+List of Rooms w/ link to /rosters/<roomid>
+- /rosters/<roomid>: List of students each the room
+
+
+Student object:
+- First Name
+- Last Name
+- ID (string)
