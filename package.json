@@ -10,24 +10,24 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@aws-sdk/lib-dynamodb": "^3.943.0",
+    "@aws-sdk/client-dynamodb": "^3.969.0",
+    "@aws-sdk/lib-dynamodb": "^3.969.0",
     "@iconify-json/heroicons": "^1.2.3",
-    "@internationalized/date": "^3.10.0",
-    "@nuxt/icon": "2.1.0",
-    "@nuxt/ui": "^4.2.1",
-    "@sidebase/nuxt-auth": "1.0.2",
-    "@vueuse/nuxt": "14.0.0",
-    "aws-sdk": "^2.1692.0",
+    "@internationalized/date": "^3.10.1",
+    "@nuxt/icon": "2.2.0",
+    "@nuxt/ui": "^4.3.0",
+    "@sidebase/nuxt-auth": "^1.1.1",
+    "@vueuse/nuxt": "14.1.0",
     "next-auth": "4.21.1",
-    "nuxt": "^4.2.1",
+    "nuxt": "^4.2.2",
     "ui": "0.2.4",
-    "vue": "^3.5.25",
-    "vue-router": "^4.6.3",
-    "zod": "^4.1.13"
+    "vue": "^3.5.26",
+    "vue-router": "^4.6.4",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.18",
     "post": "^0.0.1",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.18"
   }
 }

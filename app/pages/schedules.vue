@@ -30,7 +30,25 @@
     </UModal>
 
     <div v-for="schedule in existingSchedules">
-      {{ schedule }}
+      <UCard>
+        <template #header>
+          {{ schedule.scheduleName }}
+          <UButton v-if="!schedule.isActive" icon="heroicons:check" color="primary" size="sm" class="ml-2">
+            Set Active Schedule
+          </UButton>  
+        </template>
+
+        <div v-for="timeEntry in schedule.times" class="p-2 border-b border-gray-200 last:border-0">
+          <div>
+            Time: {{ timeEntry.time }}
+          </div>
+          <div v-if="timeEntry.durationMinutes !== undefined">
+            Duration: {{ timeEntry.durationMinutes }} minutes
+          </div>
+        </div>
+
+      </UCard>    
+
     </div>
   </div>
 
@@ -38,6 +56,7 @@
 
 <script lang="ts" setup>
 import { Time } from '@internationalized/date'
+import type { ServerSchedule } from '../../schema/schedule';
 
 const isOpen = ref(false);
 
@@ -60,8 +79,7 @@ const formState = reactive({
 const {
   data: existingSchedules,
   refresh: getScheduleData
-} = await useFetch('/api/schedule/' + 'default-school')
-
+} = await useFetch<ServerSchedule[]>('/api/schedule/' + 'default-school')
 
 function submit(){
   if(formState.scheduleName.trim() === '' || formState.times.length === 0){

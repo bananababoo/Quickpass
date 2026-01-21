@@ -12,7 +12,8 @@ export const ClientScheduleSchema = z.object({
 export type ClientSchedule = z.infer<typeof ClientScheduleSchema>
 
 export const ServerScheduleSchema = ClientScheduleSchema.extend({
-  scheduleId: z.uuid(),
+  scheduleId: z.uuid().default(() => crypto.randomUUID()),
+  isActive: z.boolean().default(false)
 });
 
 export type ServerSchedule = z.infer<typeof ServerScheduleSchema>;
