@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const RoomSchema = z.object({
-    roomId: z.uuid(),
+    roomId: z.string(),
+    roomName: z.string(),
 })
 
 export type Room = z.infer<typeof RoomSchema>

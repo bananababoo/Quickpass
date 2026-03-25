@@ -34,7 +34,6 @@ export default defineEventHandler(async (event) => {
     let scheduleDatas: Period[] = []
 
     for (let item of Items) {
-      console.log('Validating item:', item);
       scheduleDatas.push(PeriodSchema.parse(item))
     }
 

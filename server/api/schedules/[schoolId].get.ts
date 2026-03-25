@@ -1,6 +1,6 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import useDynamoDB from '../../utils/dynamodb'
-import { ClientSchedule, ClientScheduleSchema } from '../../../schema/schedule'
+import { ServerSchedule, ServerScheduleSchema } from '~~/schema/schedule'
 
 export default defineEventHandler(async (event) => {
 
@@ -27,25 +27,28 @@ export default defineEventHandler(async (event) => {
         const { Items } = await client.send(new QueryCommand(queryOptions))
 
         if (!Items || Items.length === 0) {
-            throw createError({ statusCode: 404, statusMessage: 'Schedule not found' })
+            return []
         }
 
         console.log('Fetched schedule:', Items)
 
-        let scheduleDatas: ClientSchedule[] = []
+        let scheduleDatas: ServerSchedule[] = []
 
         for (let item of Items) {
-            console.log('Validating item:', item);
-            scheduleDatas.push(ClientScheduleSchema.parse(item))
+            scheduleDatas.push(ServerScheduleSchema.parse(item))
         }
 
         return scheduleDatas
 
-    } catch (err) {
-        console.error(err);
+    } catch (err: any) {
+        if (err.statusCode) {
+            throw err
+        }
+
+        console.error('Unexpected Server Error:', err)
         throw createError({
             statusCode: 500,
-            statusMessage: 'Failed to fetch passes',
+            statusMessage: 'Failed to fetch schedule due to server error',
         })
     }
 

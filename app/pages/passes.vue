@@ -11,17 +11,25 @@
 
       </div>
       <div class="flex flex-column gap-4 p-6 align-items: flex-start">
-        <div class="border border-gray-30 rounded-lg max-w-lg">
+        <div class="border border-gray-30 rounded-lg w-fit">
             <div class="p-3">
                 Active Passes:
             </div>
-            <UTable :data="tableData" :columns="activeColumns"/>
+            <UTable :data="tableRows" :columns="activeColumns"/>
         </div>
         <div class="border border-gray-30 rounded-lg max-w-lg">
             <div class="p-3">
                 Expired Passes:
             </div>
-            <UTable :data="expiredTableData" :columns="expiredColumns"/>
+            <UTable :data="expiredTableRows" :columns="expiredColumns"/>
+        </div>
+        <div class="border border-gray-30 rounded-lg max-w-lg">
+          <div v-if="error?.statusCode == 404">
+            No active schedule
+          </div>
+          <div v-else-if="activePeriod">
+            {{ activePeriod }}
+          </div>
         </div>
       </div>
     </div>
@@ -30,14 +38,19 @@
 
 <script lang="ts" setup>
 import type { User } from '~~/schema/user'
+import type { Room } from '~~/schema/room'
 import type { Pass } from '~~/schema/pass'
+import type { ClientSchedule } from '~~/schema/schedule'
+import type { StudentPass } from '~~/schema/studentPass'
+
 import { useTimeAgo } from '@vueuse/core'
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
+import { ta } from 'zod/locales'
 
 type PassColumn = {
   passId: string;
-  timestamp: string;
+  cardScannedTime: string;
 }
 
 const UButton = resolveComponent('UButton')
@@ -53,7 +66,7 @@ watch(passData, (newPassData) => {
   if(newPassData) {
     newPassData.forEach( (entry => {
       if(entry.expired == true) return;
-      const passTime = new Date(entry.timestamp);
+      const passTime = new Date(entry.cardScannedTime);
       const currentTime = new Date();
       const diffInMs = currentTime.getTime() - passTime.getTime();
       const diffInHours = diffInMs / (1000 * 60 * 60);
@@ -65,13 +78,15 @@ watch(passData, (newPassData) => {
       })
     )
     newPassData.sort((a, b) => {
-      const timeA = new Date(a.timestamp).getTime();
-      const timeB = new Date(b.timestamp).getTime();
+      const timeA = new Date(a.cardScannedTime).getTime();
+      const timeB = new Date(b.cardScannedTime).getTime();
       return timeB - timeA; 
     })
   }
 }, { immediate: true }
 );
+
+const mapUserCache = new Map<string, {firstName: string, lastName: string}>();
 
 const expiredColumns: TableColumn<PassColumn>[] = [
   {
@@ -79,7 +94,15 @@ const expiredColumns: TableColumn<PassColumn>[] = [
     header: 'Pass ID',
   },
   {
-    accessorKey: 'timestamp',
+    accessorKey: 'name',
+    header: 'Name'
+  },
+  {
+    accessorKey: 'roomName',
+    header: 'Room'
+  },
+  {
+    accessorKey: 'cardScannedTime',
     header: 'Issued',
   }
 ]
@@ -90,7 +113,15 @@ const activeColumns: TableColumn<PassColumn>[] = [
     header: 'Pass ID',
   },
   {
-    accessorKey: 'timestamp',
+    accessorKey: 'name',
+    header: 'Name'
+  },
+  {
+    accessorKey: 'roomName',
+    header: 'Room'
+  },
+  {
+    accessorKey: 'cardScannedTime',
     header: 'Issued',
   },
   {
@@ -125,32 +156,62 @@ const activeColumns: TableColumn<PassColumn>[] = [
   }
 ]
 
-const tableData = computed(() => {
-  return passData.value!.filter((entry) => !entry.expired).map((entry) => {
-    const timeAgo = useTimeAgo(new Date(entry.timestamp));
+const tableRows = ref<{passId: string, cardScannedTime: string, name: string}[]>([]);
+const expiredTableRows = ref<{passId: string, cardScannedTime: string, name: string}[]>([]);
+
+
+watchEffect(async () => {
+  if(!passData.value) return
+  const activeEntries = passData.value.filter((entry) => !entry.expired);
+  const rows = await Promise.all(activeEntries.map(async (entry) => {
+    const timeAgo = useTimeAgo(new Date(entry.cardScannedTime));
+    var name;
+    if(mapUserCache.get(entry.passCardId) == undefined){
+      const studentData = (await $fetch<StudentPass>('/api/passcards/' + entry.passCardId));
+      name = studentData.firstName + " " + studentData.lastName;
+    }else {
+      const cached = mapUserCache.get(entry.passCardId)!;
+      name = cached.firstName + " " + cached.lastName;
+    }
+    const roomName = (await $fetch<Room>('/api/room/' + entry.roomId)).roomName;
+
     return {
       passId: entry.passId,
-      timestamp: timeAgo.value
+      cardScannedTime: timeAgo.value,
+      roomName: roomName,
+      name: name
     }
-  })
+  }))
+  tableRows.value = rows;
 })
 
-const expiredTableData = computed(() => {
-  return passData.value!.filter((entry) => {
-    const passTime = new Date(entry.timestamp);
+watchEffect(async () => {
+  if(!passData.value) return
+  const expiredEntries = passData.value!.filter((entry) => {
+    const passTime = new Date(entry.cardScannedTime);
     const currentTime = new Date();
     const diffInMs = currentTime.getTime() - passTime.getTime();
     const diffInHours = diffInMs / (1000 * 60 * 60);
     return entry.expired && diffInHours <= 48;
-  }
-  ).map((entry) => {
-    const timeAgo = useTimeAgo(new Date(entry.timestamp));
-    return {
-      passId: entry.passId,
-      timestamp: timeAgo.value
-    }
   })
+  const rows = await Promise.all(expiredEntries.map(async (entry) => {
+  const timeAgo = useTimeAgo(new Date(entry.cardScannedTime));
+  var name;
+  if(mapUserCache.get(entry.passCardId) == undefined){
+    const studentData = (await $fetch<StudentPass>('/api/passcards/' + entry.passCardId));
+    name = studentData.firstName + " " + studentData.lastName;
+  }else {
+    const cached = mapUserCache.get(entry.passCardId)!;
+    name = cached.firstName + " " + cached.lastName;
+  }  return {
+  passId: entry.passId,
+  cardScannedTime: timeAgo.value,
+  name: name
+  }
+  }))
+  expiredTableRows.value = rows;
 })
+
 
 const { data } = useAuth()
 
@@ -187,6 +248,36 @@ onMounted(() => {
 async function fetchPasses(){
   passData.value = await $fetch('/api/passes')
 }
+
+const { data: schedule, error } = await useAsyncData('schedule', () => 
+  $fetch<ClientSchedule>('/api/schedule/active/' + user.data.value?.schoolId)!!
+);
+
+
+const activePeriod = computed(() => {
+  if (error.value  || !schedule.value?.times?.length) return null;
+
+  const toMinutes = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.getHours() * 60 + d.getMinutes();
+  };
+
+  // Sort chronologically
+  const sorted = [...schedule.value.times].sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+  
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // Find first period that hasn't ended yet
+  const found = sorted.find(p => {
+    const startTime = toMinutes(p.time);
+    const endTime = startTime + p.durationMinutes;
+    return endTime > currentMinutes;
+  });
+
+  // Return found period or fall back to the first one (morning logic)
+  return found || sorted[0];
+});
 
 </script>
 

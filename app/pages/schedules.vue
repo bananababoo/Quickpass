@@ -33,7 +33,7 @@
       <UCard>
         <template #header>
           {{ schedule.scheduleName }}
-          <UButton v-if="!schedule.isActive" icon="heroicons:check" color="primary" size="sm" class="ml-2">
+          <UButton v-if="schedule.scheduleId != activeSchedule?.scheduleId" icon="heroicons:check" color="primary" size="sm" class="ml-2" v-on:click="setActive(schedule)">
             Set Active Schedule
           </UButton>  
         </template>
@@ -56,7 +56,8 @@
 
 <script lang="ts" setup>
 import { Time } from '@internationalized/date'
-import type { ServerSchedule } from '../../schema/schedule';
+import type { ServerSchedule } from '~~/schema/schedule';
+import type { User } from '~~/schema/user';
 
 const isOpen = ref(false);
 
@@ -76,10 +77,32 @@ const formState = reactive({
   times: [{time: new Time(8,0,0)}] as TimeEntry[]
 })
 
+const { data } = useAuth()
+
+//console.log("/api/users/" + data!.value!.id_token ) 
+
+const user = await useFetch<User>("/api/users/" + data!.value!.id_token )
+
 const {
   data: existingSchedules,
   refresh: getScheduleData
-} = await useFetch<ServerSchedule[]>('/api/schedule/' + 'default-school')
+} = await useFetch<ServerSchedule[]>('/api/schedules/' + user.data.value?.schoolId)
+
+var activeSchedule = await useFetch<ServerSchedule>('/api/schedule/active/' + user.data.value?.schoolId).data.value!!;
+
+console.log("Getting Active schedule: " + activeSchedule?.scheduleName + " from school" + user.data.value?.schoolId);
+
+function setActive(schedule: ServerSchedule){
+  $fetch('/api/school/' + user.data.value?.schoolId + '/activeSchedule', {
+    method: "PUT",
+    body: { "scheduleId": schedule.scheduleId }
+  }).then( (response) => {
+    console.log("Schedule updated:", response);
+    getScheduleData();
+  });
+  activeSchedule = schedule;
+  console.log("set schedule: " + schedule.scheduleId + " as active schedule")
+}
 
 function submit(){
   if(formState.scheduleName.trim() === '' || formState.times.length === 0){
@@ -91,7 +114,7 @@ function submit(){
   $fetch('/api/schedule/create', {
     method: 'POST',
     body: {
-      schoolId: 'default-school',
+      schoolId: user.data.value?.schoolId,
       scheduleName: formState.scheduleName,
       times: formState.times.map( timeEntry => ({time: timeEntry.time.toString(), durationMinutes: timeEntry.durationMinutes}))
     }

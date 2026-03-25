@@ -34,7 +34,6 @@ export default defineEventHandler(async (event) => {
         let scheduleDatas: Room[] = []
 
         for (let item of Items) {
-            console.log('Validating item:', item);
             scheduleDatas.push(RoomSchema.parse(item))
         }
 
