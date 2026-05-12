@@ -225,7 +225,16 @@ const { open } = useWebSocket('wss://y2ulx9tdak.execute-api.us-east-2.amazonaws.
     // We parse the number of connected users from the message
     // The message might be a string or a Blob
     console.log("Received WebSocket message: " + event.data)
+
+    console.log("New pass issued by: " + JSON.parse(event.data)["newData"]["passCardId"]["S"])
+    const cardId = JSON.parse(event.data)["newData"]["passCardId"]["S"]
     fetchPasses()
+
+    passData.value.filter((entry) => {
+      entry.passCardId == cardId && entry.expired == false
+    }).forEach((entry) => {
+      entry.expired = true
+    })
   },
   async onConnected(ws) {
     console.log('WS Connected', ws);
