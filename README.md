@@ -1,4 +1,6 @@
-# Nuxt Minimal Starter
+# Quickpass Website
+
+This website is used as a frontend for QuickPass Modules.
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
